@@ -38,6 +38,12 @@ class FSCILTrainer(Trainer):
         elif self.args.schedule == 'Milestone':
             scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=self.args.milestones,
                                                              gamma=self.args.gamma)
+        elif self.args.schedule == 'Cosine':
+            # 增加 Cosine 余弦退火调度器，T_max 设为总的 base 训练轮数
+            scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=self.args.epochs_base)
+        else:
+            # 增加保护机制，如果输入了未知的 schedule 参数，直接报错提示
+            raise ValueError(f"Unsupported schedule type: {self.args.schedule}")
 
         return optimizer, scheduler
 
