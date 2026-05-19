@@ -158,16 +158,19 @@ class FSCILTrainer(Trainer):
             return class_list
 
     def get_optimizer_base(self):
-        top_para = [v for k, v in self.model.named_parameters() if ('encoder' not in k and 'cls' not in k)]
-        optimizer = torch.optim.SGD([{'params': self.model.module.encoder.parameters(), 'lr': self.args.lr_base},
-                                     {'params': top_para, 'lr': self.args.lrg}],
-                                    momentum=0.9, nesterov=True, weight_decay=self.args.decay)
 
+        optimizer = torch.optim.SGD(self.model.parameters(), self.args.lr_base, momentum=0.9, nesterov=True,
+                                    weight_decay=self.args.decay)
         if self.args.schedule == 'Step':
             scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=self.args.step, gamma=self.args.gamma)
         elif self.args.schedule == 'Milestone':
             scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=self.args.milestones,
                                                              gamma=self.args.gamma)
+        elif self.args.schedule == 'Cosine':
+            # 增加对 Cosine 余弦退火调度器的支持
+            scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=self.args.epochs_base)
+        else:
+            raise ValueError(f"Unsupported schedule type: {self.args.schedule}")
 
         return optimizer, scheduler
 
